@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>Control de Finanzas Domésticas</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon-192.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { background-color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
+      .app-container { max-width: 520px; margin: 0 auto; min-height: 100vh; background: #ffffff; display: flex; flex-direction: column; position: relative; }
+      .sidebar { transition: transform 0.3s ease-in-out; }
+    </style>
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    <div class="app-container shadow-xl overflow-hidden">
+      <div id="sidebar-overlay" onclick="toggleMenu()" class="hidden fixed inset-0 bg-black/50 z-40"></div>
+      <aside id="sidebar" class="sidebar fixed top-0 left-0 w-80 h-full bg-white z-50 shadow-2xl transform -translate-x-full flex flex-col p-5 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6 border-b pb-3">
+          <h2 class="text-base font-bold text-gray-800">⚙️ Configuración</h2>
+          <button onclick="toggleMenu()" class="text-gray-500 hover:text-black font-bold text-xl">&times;</button>
+        </div>
+        <div class="mb-6 space-y-3">
+          <h3 class="text-xs font-bold text-gray-500 uppercase">1. Gestión de Familias y Grupos</h3>
+          <div class="space-y-2 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <input type="text" id="cfg-cat-nombre" placeholder="Nombre (ej: Cine/Restaurantes)" class="w-full p-2 text-xs border rounded-lg">
+            <select id="cfg-cat-grupo" class="w-full p-2 text-xs border rounded-lg bg-white font-medium text-gray-700">
+              <option value="Ingreso">🟢 Ingreso</option>
+              <option value="Gasto del hogar">🏠 Gasto del hogar</option>
+              <option value="Gasto en ocio">🎉 Gasto en ocio</option>
+            </select>
+            <button onclick="cfgAgregarCategoria()" class="w-full bg-indigo-600 text-white text-xs py-2 rounded-lg font-bold hover:bg-indigo-700 transition">+ Añadir Familia</button>
+          </div>
+          <div id="cfg-lista-categorias" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
+        </div>
+        <div class="mb-6 space-y-2">
+          <h3 class="text-xs font-bold text-gray-500 uppercase">2. Histórico de Ejercicios</h3>
+          <div class="p-3 bg-gray-50 rounded-lg text-xs text-gray-600 border border-gray-200">
+            <p class="font-bold text-gray-800">Ejercicio Activo: 2026</p>
+            <p class="mt-1">Cierre previo (2025): <strong>2.800,00 €</strong></p>
+          </div>
+        </div>
+      </aside>
+
+      <header class="bg-indigo-600 text-white p-5 rounded-b-2xl shadow-md">
+        <div class="flex justify-between items-center mb-4">
+          <button onclick="toggleMenu()" class="p-2 rounded-lg bg-indigo-700 hover:bg-indigo-500 text-white font-bold text-sm">🍔</button>
+          <div class="text-center">
+            <h1 class="text-xs uppercase tracking-wider text-indigo-200">Presupuesto Familiar</h1>
+            <p class="text-base font-bold" id="periodo-titulo">Septiembre 2026</p>
+          </div>
+          <select id="selector-vista" onchange="cambiarVistaTemporal(this.value)" class="bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
+            <option value="MES">Vista: Mes</option>
+            <option value="ANIO">Vista: Año</option>
+          </select>
+        </div>
+        <div class="bg-indigo-700/60 backdrop-blur-md rounded-xl p-4 border border-indigo-400/30">
+          <div class="flex justify-between items-center text-xs text-indigo-200 font-medium">
+            <span id="lbl-kpi-forecast">Estimación Cierre de Mes</span>
+            <span id="lbl-kpi-ahorro-pct" class="bg-emerald-500 text-white px-2 py-0.5 rounded font-bold">Ahorro: 0%</span>
+          </div>
+          <div class="text-3xl font-extrabold mt-1" id="kpi-forecast">0,00 €</div>
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-indigo-500/40 text-xs">
+            <div>
+              <span class="text-indigo-200 block">Saldo Real Propio:</span>
+              <span class="font-bold text-sm" id="kpi-saldo-real">0,00 €</span>
+            </div>
+            <div>
+              <span class="text-indigo-200 block">Estimación Ahorro:</span>
+              <span class="font-bold text-sm text-emerald-300" id="kpi-ahorro-importe">0,00 €</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-10 text-[11px]">
+        <button onclick="switchTab('resumen')" id="tab-resumen" class="flex-1 py-3 text-center font-bold border-b-2 border-indigo-600 text-indigo-600">📊 Resumen</button>
+        <button onclick="switchTab('cuentas')" id="tab-cuentas" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🏦 Cuentas</button>
+        <button onclick="switchTab('movimientos')" id="tab-movimientos" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">💸 Movimientos</button>
+        <button onclick="switchTab('presupuesto')" id="tab-presupuesto" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🎯 Presupuesto</button>
+      </nav>
+
+      <main class="flex-1 p-4 overflow-y-auto">
+        <section id="sec-resumen" class="space-y-4">
+          <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider flex justify-between items-center">
+            <span>Desglose Finanzas (<span id="txt-vista-actual">Mes</span>)</span>
+            <span class="text-[10px] bg-gray-200 px-2 py-0.5 rounded text-gray-600">Clic para desplegar</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div onclick="toggleAcordion('det-ingresos-totales')" class="flex justify-between items-center p-3.5 cursor-pointer hover:bg-gray-50 transition">
+                <div>
+                  <p class="text-xs font-bold text-gray-800">Ingresos Totales (Cobrados + Pendientes)</p>
+                  <p class="text-[10px] text-gray-400">Presupuestados / Estimados</p>
+                </div>
+                <span class="text-xs font-bold text-emerald-600" id="resumen-ingresos-totales">+0,00 €</span>
+              </div>
+              <div id="det-ingresos-totales" class="hidden bg-emerald-50/40 border-t border-gray-100 p-3 text-xs space-y-1.5"></div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div onclick="toggleAcordion('det-ingresos-pendientes')" class="flex justify-between items-center p-3.5 cursor-pointer hover:bg-gray-50 transition">
+                <div>
+                  <p class="text-xs font-bold text-gray-800">Ingresos Pendientes por Cobrar</p>
+                  <p class="text-[10px] text-gray-400">Estimación de lo que queda por ingresar</p>
+                </div>
+                <span class="text-xs font-bold text-emerald-500" id="resumen-ingresos-pendientes">+0,00 €</span>
+              </div>
+              <div id="det-ingresos-pendientes" class="hidden bg-emerald-50/40 border-t border-gray-100 p-3 text-xs space-y-1.5"></div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div onclick="toggleAcordion('det-gastos-reales')" class="flex justify-between items-center p-3.5 cursor-pointer hover:bg-gray-50 transition">
+                <div>
+                  <p class="text-xs font-bold text-gray-800">Gastos Realizados (Pagados)</p>
+                  <p class="text-[10px] text-gray-400">Cargados en cuenta hasta hoy</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-rose-600 block" id="resumen-gastos-reales">-0,00 €</span>
+                  <span class="text-[10px] font-semibold text-gray-500" id="pct-gastos-reales">0% s/ingresos</span>
+                </div>
+              </div>
+              <div id="det-gastos-reales" class="hidden bg-rose-50/40 border-t border-gray-100 p-3 text-xs space-y-1.5"></div>
+            </div>
+            <div class="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden bg-amber-50/30">
+              <div onclick="toggleAcordion('det-gastos-pendientes')" class="flex justify-between items-center p-3.5 cursor-pointer hover:bg-amber-50/60 transition">
+                <div>
+                  <p class="text-xs font-bold text-amber-900">Gastos Pendientes Restantes</p>
+                  <p class="text-[10px] text-amber-700">Estimación de lo que falta por pagar</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-bold text-amber-700 block" id="resumen-gastos-pendientes">-0,00 €</span>
+                  <span class="text-[10px] font-semibold text-amber-600" id="pct-gastos-pendientes">0% s/ingresos</span>
+                </div>
+              </div>
+              <div id="det-gastos-pendientes" class="hidden bg-amber-50 border-t border-amber-200 p-3 text-xs space-y-1.5"></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 text-white p-4 rounded-xl shadow-md space-y-2">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Capacidad de Ahorro Estimada</h3>
+            <div class="flex justify-between items-baseline">
+              <span class="text-2xl font-bold text-emerald-400" id="analisis-ahorro-importe">0,00 €</span>
+              <span class="text-sm font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg" id="analisis-ahorro-pct">0%</span>
+            </div>
+            <p class="text-[11px] text-slate-400">Resultado neto estimado tras restar el total de gastos a los ingresos previstos.</p>
+          </div>
+        </section>
+
+        <section id="sec-cuentas" class="hidden space-y-4">
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <p class="text-xs font-bold text-gray-700" id="form-cta-titulo">Añadir / Editar Cuenta Bancaria</p>
+              <button id="btn-cancelar-cta" onclick="cancelarEdicionCuenta()" class="hidden text-[10px] bg-gray-300 text-gray-800 font-bold px-2 py-0.5 rounded">Cancelar</button>
+            </div>
+            <input type="hidden" id="edit-cta-id">
+            <input type="text" id="cta-input-nombre" placeholder="Nombre (ej. Cuenta Nomina BBVA)" class="w-full p-2 text-xs border rounded-lg">
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-[9px] text-gray-500 font-bold block">Saldo Inicial (€)</label>
+                <input type="number" id="cta-input-inicial" placeholder="0.00" class="w-full p-2 text-xs border rounded-lg">
+              </div>
+              <div>
+                <label class="text-[9px] text-gray-500 font-bold block">Saldo Actual (€)</label>
+                <input type="number" id="cta-input-actual" placeholder="0.00" class="w-full p-2 text-xs border rounded-lg">
+              </div>
+              <div>
+                <label class="text-[9px] text-gray-500 font-bold block">% Propiedad</label>
+                <input type="number" id="cta-input-part" value="100" min="1" max="100" class="w-full p-2 text-xs border rounded-lg font-bold text-indigo-600">
+              </div>
+            </div>
+            <button onclick="guardarCuenta()" id="btn-guardar-cta" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">+ Guardar Cuenta</button>
+          </div>
+          <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Maestro de Cuentas y Evolución</h2>
+          <div id="lista-cuentas-maestro" class="space-y-2.5"></div>
+        </section>
+
+        <section id="sec-movimientos" class="hidden space-y-4">
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2.5">
+            <div class="flex justify-between items-center">
+              <p class="text-xs font-bold text-gray-700" id="form-mov-titulo">Añadir Nuevo Movimiento</p>
+              <button id="btn-cancelar-edit" onclick="cancelarEdicionMovimiento()" class="hidden text-[10px] bg-gray-300 text-gray-800 font-bold px-2 py-0.5 rounded">Cancelar</button>
+            </div>
+            <input type="hidden" id="edit-mov-id">
+            <div class="flex items-center gap-2 bg-indigo-50 p-2 rounded-lg border border-indigo-100 mb-1">
+              <input type="checkbox" id="input-es-transferencia" onchange="toggleModoTransferencia()" class="h-4 w-4 text-indigo-600 rounded">
+              <label for="input-es-transferencia" class="text-xs font-bold text-indigo-900 cursor-pointer">🔄 Es una transferencia entre mis cuentas</label>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="input-concepto" placeholder="Concepto (ej. Compra Mercadona)" class="p-2 text-xs border rounded-lg">
+              <input type="number" id="input-importe" placeholder="Importe Total (€)" class="p-2 text-xs border rounded-lg">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="date" id="input-fecha" class="p-2 text-xs border rounded-lg bg-white">
+              <div class="flex items-center gap-1 border rounded-lg bg-white px-2">
+                <span class="text-[10px] text-gray-400 font-bold">%Mi:</span>
+                <input type="number" id="input-participacion" value="100" min="1" max="100" class="w-full text-xs font-bold text-indigo-600 focus:outline-none">
+              </div>
+            </div>
+            <div id="campo-categoria"><select id="input-categoria" class="w-full p-2 text-xs border rounded-lg bg-white"></select></div>
+            <div id="campo-cuenta-unica">
+              <label class="text-[9px] text-gray-500 font-bold block mb-1">Cuenta Afectada:</label>
+              <select id="input-cuenta" class="w-full p-2 text-xs border rounded-lg bg-white font-medium text-gray-700"></select>
+            </div>
+            <div id="campo-cuentas-transferencia" class="hidden grid grid-cols-2 gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+              <div>
+                <label class="text-[9px] text-blue-800 font-bold block mb-0.5">Desde (Origen):</label>
+                <select id="input-cuenta-origen" class="w-full p-2 text-xs border rounded-lg bg-white font-medium text-gray-700"></select>
+              </div>
+              <div>
+                <label class="text-[9px] text-blue-800 font-bold block mb-0.5">Hacia (Destino):</label>
+                <select id="input-cuenta-destino" class="w-full p-2 text-xs border rounded-lg bg-white font-medium text-gray-700"></select>
+              </div>
+            </div>
+            <button onclick="guardarMovimiento()" id="btn-guardar-mov" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-lg transition">+ Registrar Movimiento</button>
+          </div>
+          <div class="relative">
+            <input type="text" id="input-buscar-mov" oninput="renderMovimientos()" placeholder="🔍 Buscar por concepto o familia..." class="w-full p-2.5 pl-3 text-xs border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Historial Reciente</h2>
+          <div id="lista-movimientos" class="space-y-2"></div>
+        </section>
+
+        <section id="sec-presupuesto" class="hidden space-y-4">
+          <div class="bg-indigo-950 text-white p-4 rounded-xl shadow-md space-y-3">
+            <div class="flex justify-between items-center border-b border-indigo-800/80 pb-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Distribución del Presupuesto Anual</h3>
+              <span class="text-[10px] text-indigo-200 bg-indigo-900 px-2 py-0.5 rounded" id="pres-total-ingresos-lbl">0,00 €/año</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-indigo-900/60 p-2 rounded-lg border border-indigo-700/50">
+                <span class="text-[9px] text-indigo-300 font-bold block uppercase">🏠 Hogar</span>
+                <span class="text-xs font-extrabold text-amber-300" id="pres-pct-hogar">0%</span>
+              </div>
+              <div class="bg-indigo-900/60 p-2 rounded-lg border border-indigo-700/50">
+                <span class="text-[9px] text-indigo-300 font-bold block uppercase">🎉 Ocio</span>
+                <span class="text-xs font-extrabold text-purple-300" id="pres-pct-ocio">0%</span>
+              </div>
+              <div class="bg-emerald-950 p-2 rounded-lg border border-emerald-600/50">
+                <span class="text-[9px] text-emerald-300 font-bold block uppercase">💰 Ahorro</span>
+                <span class="text-xs font-extrabold text-emerald-400" id="pres-pct-ahorro">0%</span>
+              </div>
+            </div>
+            <div class="w-full bg-indigo-900 h-2.5 rounded-full overflow-hidden flex">
+              <div id="bar-hogar" class="bg-amber-400 h-full" style="width: 0%"></div>
+              <div id="bar-ocio" class="bg-purple-400 h-full" style="width: 0%"></div>
+              <div id="bar-ahorro" class="bg-emerald-400 h-full" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2.5">
+            <p class="text-xs font-bold text-gray-700">Añadir / Ajustar Presupuesto</p>
+            <div class="grid grid-cols-3 gap-2">
+              <select id="pres-input-cat" class="p-2 text-xs border rounded-lg bg-white col-span-1"></select>
+              <input type="number" id="pres-input-monto" placeholder="Importe (€)" class="p-2 text-xs border rounded-lg col-span-1">
+              <div>
+                <input type="number" id="pres-input-num-mov" value="12" min="1" max="365" placeholder="Nº movs/año" class="w-full p-2 text-xs border rounded-lg">
+                <span class="text-[8px] text-gray-400 block text-right">movs/año</span>
+              </div>
+            </div>
+            <button onclick="guardarPresupuesto()" class="w-full bg-indigo-600 text-white text-xs font-bold rounded-lg py-2 hover:bg-indigo-700 transition">+ Guardar Presupuesto</button>
+          </div>
+          <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Partidas Presupuestadas</h2>
+          <div class="space-y-2" id="lista-presupuestos"></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
