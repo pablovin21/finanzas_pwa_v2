@@ -44,9 +44,9 @@
 
       <header class="bg-indigo-600 text-white p-5 rounded-b-2xl shadow-md">
         <div class="flex justify-between items-center mb-4">
-          <button onclick="toggleMenu()" class="p-2 rounded-lg bg-indigo-700 hover:bg-indigo-500 text-white font-bold text-sm">🍔</button>
+          <button onclick="toggleMenu()" class="p-2 rounded-lg bg-indigo-700 hover:bg-indigo-500 text-white font-bold text-sm" aria-label="Abrir configuración">⚙️</button>
           <div class="text-center">
-            <h1 class="text-xs uppercase tracking-wider text-indigo-200">Presupuesto Familiar</h1>
+            <h1 class="text-sm font-semibold tracking-wide text-indigo-100 uppercase">Control gastos</h1>
             <p class="text-base font-bold" id="periodo-titulo">Septiembre 2026</p>
           </div>
           <select id="selector-vista" onchange="cambiarVistaTemporal(this.value)" class="bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
@@ -249,11 +249,11 @@
 
           <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2.5">
             <p class="text-xs font-bold text-gray-700">Añadir / Ajustar Presupuesto</p>
-            <div class="grid grid-cols-3 gap-2">
-              <select id="pres-input-cat" class="p-2 text-xs border rounded-lg bg-white col-span-1"></select>
-              <input type="number" id="pres-input-monto" placeholder="Importe (€)" class="p-2 text-xs border rounded-lg col-span-1">
+            <div class="grid grid-cols-3 gap-2 items-end">
+              <select id="pres-input-cat" class="h-10 px-2 text-xs border rounded-lg bg-white col-span-1"></select>
+              <input type="number" id="pres-input-monto" placeholder="Importe (€)" class="h-10 px-2 text-xs border rounded-lg col-span-1">
               <div>
-                <input type="number" id="pres-input-num-mov" value="12" min="1" max="365" placeholder="Nº movs/año" class="w-full p-2 text-xs border rounded-lg">
+                <input type="number" id="pres-input-num-mov" value="12" min="1" max="365" placeholder="Nº movs/año" class="w-full h-10 px-2 text-xs border rounded-lg">
                 <span class="text-[8px] text-gray-400 block text-right">movs/año</span>
               </div>
             </div>
