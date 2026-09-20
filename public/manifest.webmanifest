@@ -2,8 +2,11 @@
   "name": "Control de Finanzas Domésticas",
   "short_name": "Finanzas",
   "description": "Aplicación de presupuesto familiar con movimientos, cuentas y análisis anual.",
+  "id": "./",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f3f4f6",
   "theme_color": "#4f46e5",
   "icons": [
