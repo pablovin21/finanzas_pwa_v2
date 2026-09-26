@@ -78,6 +78,7 @@
         <button onclick="switchTab('cuentas')" id="tab-cuentas" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🏦 Cuentas</button>
         <button onclick="switchTab('movimientos')" id="tab-movimientos" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">💸 Movimientos</button>
         <button onclick="switchTab('presupuesto')" id="tab-presupuesto" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🎯 Presupuesto</button>
+        <button onclick="switchTab('simular')" id="tab-simular" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🧪 Simular</button>
       </nav>
 
       <main class="flex-1 p-4 overflow-y-auto">
@@ -261,6 +262,70 @@
           </div>
           <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Partidas Presupuestadas</h2>
           <div class="space-y-2" id="lista-presupuestos"></div>
+        </section>
+
+        <section id="sec-simular" class="hidden space-y-4">
+          <div class="bg-indigo-950 text-white p-4 rounded-xl shadow-md space-y-3">
+            <div class="flex justify-between items-center border-b border-indigo-800/80 pb-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Distribución del Presupuesto Anual</h3>
+              <span class="text-[10px] text-indigo-200 bg-indigo-900 px-2 py-0.5 rounded" id="sim-total-ingresos-lbl">0,00 €/año</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="bg-indigo-900/60 p-2 rounded-lg border border-indigo-700/50">
+                <span class="text-[9px] text-indigo-300 font-bold block uppercase">🏠 Hogar</span>
+                <span class="text-xs font-extrabold text-amber-300" id="sim-pct-hogar">0%</span>
+              </div>
+              <div class="bg-indigo-900/60 p-2 rounded-lg border border-indigo-700/50">
+                <span class="text-[9px] text-indigo-300 font-bold block uppercase">🎉 Ocio</span>
+                <span class="text-xs font-extrabold text-purple-300" id="sim-pct-ocio">0%</span>
+              </div>
+              <div class="bg-emerald-950 p-2 rounded-lg border border-emerald-600/50">
+                <span class="text-[9px] text-emerald-300 font-bold block uppercase">💰 Ahorro</span>
+                <span class="text-xs font-extrabold text-emerald-400" id="sim-pct-ahorro">0%</span>
+              </div>
+            </div>
+            <div class="w-full bg-indigo-900 h-2.5 rounded-full overflow-hidden flex">
+              <div id="sim-bar-hogar" class="bg-amber-400 h-full" style="width: 0%"></div>
+              <div id="sim-bar-ocio" class="bg-purple-400 h-full" style="width: 0%"></div>
+              <div id="sim-bar-ahorro" class="bg-emerald-400 h-full" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <p class="text-xs font-bold text-gray-700">Estimación de cierre de Año</p>
+              <span class="text-base font-extrabold text-indigo-700" id="sim-forecast">0,00 €</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-gray-50 rounded-lg border border-gray-100 p-2">
+                <span class="text-gray-500 block">Saldo simulado de cuentas</span>
+                <span class="font-bold text-gray-800" id="sim-saldo-real">0,00 €</span>
+              </div>
+              <div class="bg-gray-50 rounded-lg border border-gray-100 p-2">
+                <span class="text-gray-500 block">Variación vs. saldos iniciales</span>
+                <span class="font-bold text-emerald-600" id="sim-ahorro-importe">0,00 €</span>
+              </div>
+              <div class="bg-gray-50 rounded-lg border border-gray-100 p-2 col-span-2">
+                <span class="text-gray-500 block">% ahorro estimado</span>
+                <span class="font-bold text-emerald-600" id="sim-ahorro-pct">0,0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200">
+              <div class="flex justify-between items-center gap-2 mb-3">
+                <p class="text-xs font-bold text-gray-700">Modificar presupuestos de simulación</p>
+                <button onclick="resetSimulacion()" class="shrink-0 px-3 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">Limpiar</button>
+              </div>
+              <div id="sim-lista-presupuestos" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200">
+              <p class="text-xs font-bold text-gray-700 mb-3">Modificar cuentas de simulación</p>
+              <div id="sim-lista-cuentas" class="space-y-2"></div>
+            </div>
+          </div>
         </section>
       </main>
     </div>

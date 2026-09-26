@@ -6,6 +6,8 @@ const STORE_NAME = 'appState';
 
 let dbPromise;
 let vistaActual = 'MES';
+let simPresupuestos = [];
+let simCuentas = [];
 
 const defaultData = {
   cuentas: [
@@ -636,6 +638,143 @@ function cambiarVistaTemporal(valor) {
   calcularFinanzas();
 }
 
+function resetSimulacion() {
+  simPresupuestos = presupuestos.map(p => ({ ...p }));
+  simCuentas = cuentas.map(c => ({ ...c }));
+  renderSimulacion();
+}
+
+function calcularResultadoSimulacion() {
+  const saldoSimuladoCuentas = simCuentas.reduce((acc, c) => acc + Number(c.saldoActual || 0), 0);
+  const saldoInicialCuentas = cuentas.reduce((acc, c) => acc + Number(c.saldoInicial || 0), 0);
+  const ingresosSimulados = simPresupuestos
+    .filter(p => obtenerTipoPorCategoria(p.categoria) === 'INGRESO')
+    .reduce((acc, p) => acc + (Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0)), 0);
+  const ingresosAnualesPresupuestados = presupuestos
+    .filter(p => obtenerTipoPorCategoria(p.categoria) === 'INGRESO')
+    .reduce((acc, p) => acc + (Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0)), 0);
+  const gastosSimulados = simPresupuestos
+    .filter(p => obtenerTipoPorCategoria(p.categoria) === 'GASTO')
+    .reduce((acc, p) => acc + (Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0)), 0);
+  const forecast = saldoSimuladoCuentas + ingresosSimulados - gastosSimulados;
+  const capacidadAhorroImporte = forecast - saldoInicialCuentas;
+  const capacidadAhorroPct = ingresosAnualesPresupuestados > 0 ? (capacidadAhorroImporte / ingresosAnualesPresupuestados) * 100 : 0;
+
+  return {
+    forecast,
+    saldoSimuladoCuentas,
+    ingresosSimulados,
+    gastosSimulados,
+    capacidadAhorroImporte,
+    capacidadAhorroPct
+  };
+}
+
+function actualizarSimPresupuesto(index, campo, valor) {
+  const item = simPresupuestos[index];
+  if (!item) return;
+  item[campo] = Number(valor) || 0;
+  const totalAnual = Number(item.importeMovimiento || 0) * Number(item.numMovimientosAnuales || 0);
+  document.getElementById(`sim-pres-total-${index}`).innerText = `${fmt(totalAnual)}/año`;
+  actualizarResumenSimulacion();
+}
+
+function actualizarSimCuenta(id, valor) {
+  const cuenta = simCuentas.find(c => c.id === id);
+  if (!cuenta) return;
+  cuenta.saldoActual = Number(valor) || 0;
+  actualizarResumenSimulacion();
+}
+
+function actualizarResumenSimulacion() {
+  const datos = calcularResultadoSimulacion();
+
+  const ingresosAnualesPresupuestados = simPresupuestos
+    .filter(p => obtenerTipoPorCategoria(p.categoria) === 'INGRESO')
+    .reduce((acc, p) => acc + (Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0)), 0);
+
+  let totalGastoHogarAnual = 0;
+  let totalGastoOcioAnual = 0;
+
+  simPresupuestos.forEach(p => {
+    const catObj = categorias.find(c => c.nombre === p.categoria);
+    const grupo = catObj ? catObj.grupo : 'Gasto del hogar';
+    const totalAnualCat = Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0);
+    if (grupo === 'Gasto del hogar') totalGastoHogarAnual += totalAnualCat;
+    if (grupo === 'Gasto en ocio') totalGastoOcioAnual += totalAnualCat;
+  });
+
+  const pctHogarGlobal = ingresosAnualesPresupuestados > 0 ? (totalGastoHogarAnual / ingresosAnualesPresupuestados) * 100 : 0;
+  const pctOcioGlobal = ingresosAnualesPresupuestados > 0 ? (totalGastoOcioAnual / ingresosAnualesPresupuestados) * 100 : 0;
+  const pctAhorroGlobal = Math.max(0, 100 - pctHogarGlobal - pctOcioGlobal);
+
+  document.getElementById('sim-total-ingresos-lbl').innerText = `Ingresos: ${fmt(ingresosAnualesPresupuestados)}/año`;
+  document.getElementById('sim-pct-hogar').innerText = `${pctHogarGlobal.toFixed(1)}%`;
+  document.getElementById('sim-pct-ocio').innerText = `${pctOcioGlobal.toFixed(1)}%`;
+  document.getElementById('sim-pct-ahorro').innerText = `${pctAhorroGlobal.toFixed(1)}%`;
+  document.getElementById('sim-bar-hogar').style.width = `${Math.min(100, pctHogarGlobal)}%`;
+  document.getElementById('sim-bar-ocio').style.width = `${Math.min(100 - pctHogarGlobal, pctOcioGlobal)}%`;
+  document.getElementById('sim-bar-ahorro').style.width = `${Math.min(100, pctAhorroGlobal)}%`;
+
+  document.getElementById('sim-forecast').innerText = fmt(datos.forecast);
+  document.getElementById('sim-saldo-real').innerText = fmt(datos.saldoSimuladoCuentas);
+  document.getElementById('sim-ahorro-importe').innerText = fmt(datos.capacidadAhorroImporte);
+  document.getElementById('sim-ahorro-pct').innerText = `${datos.capacidadAhorroPct.toFixed(1)}%`;
+}
+
+function renderSimulacion() {
+  actualizarResumenSimulacion();
+
+  const simPresupuestoContainer = document.getElementById('sim-lista-presupuestos');
+  simPresupuestoContainer.innerHTML = '';
+  simPresupuestos.forEach((p, index) => {
+    const catObj = categorias.find(c => c.nombre === p.categoria);
+    const grupo = catObj ? catObj.grupo : 'Gasto del hogar';
+    const badge = grupo === 'Ingreso'
+      ? '<span class="bg-emerald-100 text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold">Ingreso</span>'
+      : grupo === 'Gasto del hogar'
+        ? '<span class="bg-amber-100 text-amber-700 text-[9px] px-2 py-0.5 rounded-full font-bold">Hogar</span>'
+        : '<span class="bg-purple-100 text-purple-700 text-[9px] px-2 py-0.5 rounded-full font-bold">Ocio</span>';
+
+    simPresupuestoContainer.innerHTML += `
+      <div class="bg-white rounded-xl border border-gray-200 p-2.5 space-y-2">
+        <div class="flex justify-between items-center gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-800">${p.categoria}</span>
+            ${badge}
+          </div>
+          <span id="sim-pres-total-${index}" class="text-[10px] text-gray-500">${fmt(Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0))}/año</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[9px] text-gray-500 font-bold block mb-1">Importe</label>
+            <input type="number" value="${Number(p.importeMovimiento || 0)}" oninput="actualizarSimPresupuesto(${index}, 'importeMovimiento', this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+          </div>
+          <div>
+            <label class="text-[9px] text-gray-500 font-bold block mb-1">Nº movs</label>
+            <input type="number" min="1" value="${Number(p.numMovimientosAnuales || 0)}" oninput="actualizarSimPresupuesto(${index}, 'numMovimientosAnuales', this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  const simCuentaContainer = document.getElementById('sim-lista-cuentas');
+  simCuentaContainer.innerHTML = '';
+  simCuentas.forEach(c => {
+    simCuentaContainer.innerHTML += `
+      <div class="bg-white rounded-xl border border-gray-200 p-2.5">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-gray-800">${c.nombre}</span>
+          <span class="text-[10px] text-indigo-600 font-semibold">${Number(c.participacion || 100)}% propio</span>
+        </div>
+        <label class="text-[9px] text-gray-500 font-bold block mb-1">Importe</label>
+        <input type="number" value="${Number(c.saldoActual || 0)}" oninput="actualizarSimCuenta(${c.id}, this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+      </div>
+    `;
+  });
+}
+
 function toggleMenu() {
   document.getElementById('sidebar').classList.toggle('-translate-x-full');
   document.getElementById('sidebar-overlay').classList.toggle('hidden');
@@ -646,7 +785,7 @@ function toggleAcordion(id) {
 }
 
 function switchTab(tab) {
-  ['resumen', 'cuentas', 'movimientos', 'presupuesto'].forEach(t => {
+  ['resumen', 'cuentas', 'movimientos', 'presupuesto', 'simular'].forEach(t => {
     document.getElementById(`sec-${t}`).classList.add('hidden');
     document.getElementById(`tab-${t}`).classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600');
     document.getElementById(`tab-${t}`).classList.add('text-gray-500');
@@ -671,6 +810,9 @@ window.toggleMenu = toggleMenu;
 window.toggleAcordion = toggleAcordion;
 window.switchTab = switchTab;
 window.cambiarVistaTemporal = cambiarVistaTemporal;
+window.resetSimulacion = resetSimulacion;
+window.actualizarSimPresupuesto = actualizarSimPresupuesto;
+window.actualizarSimCuenta = actualizarSimCuenta;
 window.cfgAgregarCategoria = cfgAgregarCategoria;
 window.cfgEliminarCategoria = cfgEliminarCategoria;
 window.guardarCuenta = guardarCuenta;
@@ -688,5 +830,6 @@ window.eliminarPresupuesto = eliminarPresupuesto;
 window.calcularFinanzas = calcularFinanzas;
 
 loadState().then(() => {
+  resetSimulacion();
   calcularFinanzas();
 });
