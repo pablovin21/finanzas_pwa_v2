@@ -35,9 +35,15 @@
         </div>
         <div class="mb-6 space-y-2">
           <h3 class="text-xs font-bold text-gray-500 uppercase">2. Histórico de Ejercicios</h3>
-          <div class="p-3 bg-gray-50 rounded-lg text-xs text-gray-600 border border-gray-200">
-            <p class="font-bold text-gray-800">Ejercicio Activo: 2026</p>
-            <p class="mt-1">Cierre previo (2025): <strong>2.800,00 €</strong></p>
+          <div class="space-y-2 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+            <label for="selector-ejercicio" class="text-[10px] font-bold text-gray-600">Ejercicio activo</label>
+            <select id="selector-ejercicio" onchange="seleccionarEjercicio(this.value)" class="w-full p-2 text-xs border rounded-lg bg-white font-medium text-gray-700"></select>
+            <input type="text" id="input-nombre-ejercicio" placeholder="Nombre del ejercicio" class="w-full p-2 text-xs border rounded-lg">
+            <button onclick="crearEjercicio()" class="w-full bg-indigo-600 text-white text-xs py-2 rounded-lg font-bold hover:bg-indigo-700 transition">+ Nuevo ejercicio</button>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="renombrarEjercicio()" class="bg-white text-gray-700 text-xs py-2 rounded-lg font-bold border border-gray-300 hover:bg-gray-100">Renombrar</button>
+              <button onclick="eliminarEjercicio()" class="bg-white text-rose-600 text-xs py-2 rounded-lg font-bold border border-rose-200 hover:bg-rose-50">Eliminar</button>
+            </div>
           </div>
         </div>
       </aside>

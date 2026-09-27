@@ -8,6 +8,8 @@ let dbPromise;
 let vistaActual = 'MES';
 let simPresupuestos = [];
 let simCuentas = [];
+let ejercicios = [];
+let ejercicioActivoId = null;
 
 const defaultData = {
   cuentas: [
@@ -69,55 +71,93 @@ function openDatabase() {
 
 async function saveState() {
   const db = await openDatabase();
-  if (!db) return;
+  const record = { id: `exercise:${ejercicioActivoId}`, data: { cuentas, categorias, presupuestos, movimientos } };
+  if (!db) {
+    localStorage.setItem(record.id, JSON.stringify(record.data));
+    return;
+  }
+  await guardarRegistro(db, record);
+}
+
+async function loadState() {
+  const db = await openDatabase();
+  const metaRecord = db ? await leerRegistro(db, 'exercise-meta') : null;
+  const storedMeta = metaRecord?.data || JSON.parse(localStorage.getItem('exercise-meta') || 'null');
+
+  if (storedMeta?.ejercicios?.length) {
+    ejercicios = storedMeta.ejercicios;
+    ejercicioActivoId = storedMeta.activoId;
+    if (!ejercicios.some(e => e.id === ejercicioActivoId)) ejercicioActivoId = ejercicios[0].id;
+  } else {
+    const legacyRecord = db ? await leerRegistro(db, 'state') : null;
+    const legacyData = legacyRecord?.data || JSON.parse(localStorage.getItem('exercise:2026') || 'null') || clonarDatos(defaultData);
+    ejercicios = [{ id: '2026', nombre: '2026' }];
+    ejercicioActivoId = '2026';
+    await guardarDatosEjercicio(ejercicioActivoId, legacyData, db);
+    await guardarMetaEjercicios(db);
+  }
+
+  let exerciseData;
+  if (db) exerciseData = (await leerRegistro(db, `exercise:${ejercicioActivoId}`))?.data;
+  else exerciseData = JSON.parse(localStorage.getItem(`exercise:${ejercicioActivoId}`) || 'null');
+  aplicarDatosEjercicio(exerciseData || defaultData);
+}
+
+function clonarDatos(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function guardarRegistro(db, record) {
   const tx = db.transaction(STORE_NAME, 'readwrite');
-  const store = tx.objectStore(STORE_NAME);
-  store.put({ id: 'state', data: { cuentas, categorias, presupuestos, movimientos } });
-  await new Promise((resolve, reject) => {
+  tx.objectStore(STORE_NAME).put(record);
+  return new Promise((resolve, reject) => {
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error);
   });
 }
 
-async function loadState() {
-  const db = await openDatabase();
-  if (!db) return;
+function leerRegistro(db, id) {
   const tx = db.transaction(STORE_NAME, 'readonly');
-  const store = tx.objectStore(STORE_NAME);
-  const request = store.get('state');
-
-  await new Promise((resolve, reject) => {
-    request.onsuccess = () => {
-      const result = request.result?.data;
-      if (result) {
-        cuentas = Array.isArray(result.cuentas) ? result.cuentas : [...defaultData.cuentas];
-        categorias = Array.isArray(result.categorias) ? result.categorias : [...defaultData.categorias];
-        presupuestos = Array.isArray(result.presupuestos) ? result.presupuestos : [...defaultData.presupuestos];
-        movimientos = Array.isArray(result.movimientos) ? result.movimientos : [...defaultData.movimientos];
-      }
-      resolve();
-    };
+  const request = tx.objectStore(STORE_NAME).get(id);
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
+function aplicarDatosEjercicio(data) {
+  cuentas = Array.isArray(data.cuentas) ? data.cuentas : clonarDatos(defaultData.cuentas);
+  categorias = Array.isArray(data.categorias) ? data.categorias : clonarDatos(defaultData.categorias);
+  presupuestos = Array.isArray(data.presupuestos) ? data.presupuestos : clonarDatos(defaultData.presupuestos);
+  movimientos = Array.isArray(data.movimientos) ? data.movimientos : clonarDatos(defaultData.movimientos);
+}
+
+async function guardarDatosEjercicio(id, data, db = null) {
+  const record = { id: `exercise:${id}`, data: clonarDatos(data) };
+  const database = db || await openDatabase();
+  if (database) await guardarRegistro(database, record);
+  else localStorage.setItem(record.id, JSON.stringify(record.data));
+}
+
+async function guardarMetaEjercicios(db = null) {
+  const record = { id: 'exercise-meta', data: { ejercicios, activoId: ejercicioActivoId } };
+  const database = db || await openDatabase();
+  if (database) await guardarRegistro(database, record);
+  else localStorage.setItem(record.id, JSON.stringify(record.data));
+}
+
 async function guardarEstadoSimulacion() {
   const data = { presupuestos: simPresupuestos, cuentas: simCuentas };
+  const recordId = `simulation:${ejercicioActivoId}`;
   try {
     const db = await openDatabase();
     if (!db) throw new Error('IndexedDB no disponible');
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put({ id: 'simulation', data });
-    await new Promise((resolve, reject) => {
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
+    await guardarRegistro(db, { id: recordId, data });
   } catch (error) {
     console.warn('No se pudo guardar la simulación en IndexedDB', error);
     try {
-      localStorage.setItem('finanzasFamiliaresSimulation', JSON.stringify(data));
+      localStorage.setItem(recordId, JSON.stringify(data));
     } catch (storageError) {
       console.warn('No se pudo guardar la simulación localmente', storageError);
     }
@@ -126,15 +166,12 @@ async function guardarEstadoSimulacion() {
 
 async function cargarEstadoSimulacion() {
   let data;
+  const recordId = `simulation:${ejercicioActivoId}`;
   try {
     const db = await openDatabase();
     if (db) {
-      const tx = db.transaction(STORE_NAME, 'readonly');
-      const request = tx.objectStore(STORE_NAME).get('simulation');
-      data = await new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result?.data);
-        request.onerror = () => reject(request.error);
-      });
+      data = (await leerRegistro(db, recordId))?.data;
+      if (!data && ejercicioActivoId === '2026') data = (await leerRegistro(db, 'simulation'))?.data;
     }
   } catch (error) {
     console.warn('No se pudo cargar la simulación de IndexedDB', error);
@@ -142,7 +179,7 @@ async function cargarEstadoSimulacion() {
 
   if (!data) {
     try {
-      data = JSON.parse(localStorage.getItem('finanzasFamiliaresSimulation') || 'null');
+      data = JSON.parse(localStorage.getItem(recordId) || localStorage.getItem('finanzasFamiliaresSimulation') || 'null');
     } catch (error) {
       console.warn('No se pudo leer la simulación local', error);
     }
@@ -662,6 +699,136 @@ function renderConfiguracion() {
       </div>
     `;
   });
+
+  const ejercicioSelect = document.getElementById('selector-ejercicio');
+  ejercicioSelect.innerHTML = ejercicios.map(e =>
+    `<option value="${escaparHtml(e.id)}" ${e.id === ejercicioActivoId ? 'selected' : ''}>${escaparHtml(e.nombre)}</option>`
+  ).join('');
+}
+
+function escaparHtml(valor) {
+  return String(valor).replace(/[&<>"']/g, caracter => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[caracter]);
+}
+
+async function seleccionarEjercicio(id) {
+  if (!ejercicios.some(e => e.id === id) || id === ejercicioActivoId) return;
+  await saveState();
+  await guardarEstadoSimulacion();
+  ejercicioActivoId = id;
+  await guardarMetaEjercicios();
+
+  const db = await openDatabase();
+  const data = db
+    ? (await leerRegistro(db, `exercise:${id}`))?.data
+    : JSON.parse(localStorage.getItem(`exercise:${id}`) || 'null');
+  aplicarDatosEjercicio(data || defaultData);
+  if (!(await cargarEstadoSimulacion())) {
+    simPresupuestos = clonarDatos(presupuestos);
+    simCuentas = clonarDatos(cuentas);
+    await guardarEstadoSimulacion();
+  }
+
+  cancelarEdicionCuenta();
+  cancelarEdicionMovimiento();
+  const nombre = ejercicios.find(e => e.id === id).nombre;
+  document.getElementById('periodo-titulo').innerText = vistaActual === 'MES' ? `Septiembre ${nombre}` : `Ejercicio ${nombre}`;
+  renderSimulacion();
+  calcularFinanzas();
+}
+
+async function crearEjercicio() {
+  const nombreInput = document.getElementById('input-nombre-ejercicio');
+  const nombre = nombreInput.value.trim();
+  if (!nombre) return alert('Introduce un nombre para el ejercicio');
+  if (ejercicios.some(e => e.nombre.toLowerCase() === nombre.toLowerCase())) return alert('Ya existe un ejercicio con ese nombre');
+
+  await saveState();
+  await guardarEstadoSimulacion();
+  const id = String(Date.now());
+  const datos = {
+    cuentas: cuentas.map(c => ({ ...c, saldoInicial: Number(c.saldoActual || 0), saldoActual: Number(c.saldoActual || 0) })),
+    categorias: clonarDatos(categorias),
+    presupuestos: clonarDatos(presupuestos),
+    movimientos: []
+  };
+  await guardarDatosEjercicio(id, datos);
+  ejercicios.push({ id, nombre });
+  ejercicioActivoId = id;
+  await guardarMetaEjercicios();
+  aplicarDatosEjercicio(datos);
+  simPresupuestos = clonarDatos(presupuestos);
+  simCuentas = clonarDatos(cuentas);
+  await guardarEstadoSimulacion();
+  nombreInput.value = '';
+  document.getElementById('periodo-titulo').innerText = vistaActual === 'MES' ? `Septiembre ${nombre}` : `Ejercicio ${nombre}`;
+  cancelarEdicionCuenta();
+  cancelarEdicionMovimiento();
+  renderSimulacion();
+  calcularFinanzas();
+}
+
+async function renombrarEjercicio() {
+  const nombre = document.getElementById('input-nombre-ejercicio').value.trim();
+  if (!nombre) return alert('Introduce un nombre para el ejercicio');
+  if (ejercicios.some(e => e.id !== ejercicioActivoId && e.nombre.toLowerCase() === nombre.toLowerCase())) return alert('Ya existe un ejercicio con ese nombre');
+  const ejercicio = ejercicios.find(e => e.id === ejercicioActivoId);
+  ejercicio.nombre = nombre;
+  await guardarMetaEjercicios();
+  document.getElementById('input-nombre-ejercicio').value = '';
+  document.getElementById('periodo-titulo').innerText = vistaActual === 'MES' ? `Septiembre ${nombre}` : `Ejercicio ${nombre}`;
+  renderConfiguracion();
+}
+
+async function eliminarEjercicio() {
+  if (ejercicios.length <= 1) return alert('Debe quedar al menos un ejercicio');
+  const ejercicio = ejercicios.find(e => e.id === ejercicioActivoId);
+  if (!confirm(`¿Eliminar el ejercicio "${ejercicio.nombre}" y todos sus datos?`)) return;
+
+  const eliminadoId = ejercicioActivoId;
+  ejercicios = ejercicios.filter(e => e.id !== eliminadoId);
+  ejercicioActivoId = ejercicios[0].id;
+  const db = await openDatabase();
+  if (db) {
+    await eliminarRegistro(db, `exercise:${eliminadoId}`);
+    await eliminarRegistro(db, `simulation:${eliminadoId}`);
+  } else {
+    localStorage.removeItem(`exercise:${eliminadoId}`);
+    localStorage.removeItem(`simulation:${eliminadoId}`);
+  }
+  await guardarMetaEjercicios(db);
+
+  const nextId = ejercicioActivoId;
+  const data = db
+    ? (await leerRegistro(db, `exercise:${nextId}`))?.data
+    : JSON.parse(localStorage.getItem(`exercise:${nextId}`) || 'null');
+  aplicarDatosEjercicio(data || defaultData);
+  if (!(await cargarEstadoSimulacion())) {
+    simPresupuestos = clonarDatos(presupuestos);
+    simCuentas = clonarDatos(cuentas);
+    await guardarEstadoSimulacion();
+  }
+  cancelarEdicionCuenta();
+  cancelarEdicionMovimiento();
+  const nombre = ejercicios.find(e => e.id === nextId).nombre;
+  document.getElementById('periodo-titulo').innerText = vistaActual === 'MES' ? `Septiembre ${nombre}` : `Ejercicio ${nombre}`;
+  renderSimulacion();
+  calcularFinanzas();
+}
+
+function eliminarRegistro(db, id) {
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  tx.objectStore(STORE_NAME).delete(id);
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
 }
 
 function actualizarSelectoresCategorias() {
@@ -684,7 +851,8 @@ function actualizarSelectoresCuentas() {
 
 function cambiarVistaTemporal(valor) {
   vistaActual = valor;
-  document.getElementById('periodo-titulo').innerText = valor === 'MES' ? 'Septiembre 2026' : 'Ejercicio 2026';
+  const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || '2026';
+  document.getElementById('periodo-titulo').innerText = valor === 'MES' ? `Septiembre ${nombreEjercicio}` : `Ejercicio ${nombreEjercicio}`;
   document.getElementById('lbl-kpi-forecast').innerText = valor === 'MES' ? 'Estimación Cierre de Mes' : 'Estimación Cierre de Año';
   document.getElementById('txt-vista-actual').innerText = valor === 'MES' ? 'Mes' : 'Año Completo';
   calcularFinanzas();
@@ -870,6 +1038,10 @@ window.actualizarSimPresupuesto = actualizarSimPresupuesto;
 window.actualizarSimCuenta = actualizarSimCuenta;
 window.cfgAgregarCategoria = cfgAgregarCategoria;
 window.cfgEliminarCategoria = cfgEliminarCategoria;
+window.seleccionarEjercicio = seleccionarEjercicio;
+window.crearEjercicio = crearEjercicio;
+window.renombrarEjercicio = renombrarEjercicio;
+window.eliminarEjercicio = eliminarEjercicio;
 window.guardarCuenta = guardarCuenta;
 window.editarCuenta = editarCuenta;
 window.eliminarCuenta = eliminarCuenta;
@@ -887,5 +1059,8 @@ window.calcularFinanzas = calcularFinanzas;
 loadState().then(async () => {
   if (await cargarEstadoSimulacion()) renderSimulacion();
   else resetSimulacion();
+  const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || '2026';
+  document.getElementById('periodo-titulo').innerText = `Septiembre ${nombreEjercicio}`;
+  renderConfiguracion();
   calcularFinanzas();
 });
