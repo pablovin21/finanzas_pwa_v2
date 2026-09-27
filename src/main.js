@@ -242,18 +242,18 @@ function calcularFinanzas() {
   const pctGastosReales = ingresosTotalesPrevisibles > 0 ? (gastosReales / ingresosTotalesPrevisibles) * 100 : 0;
   const pctGastosPendientes = ingresosTotalesPrevisibles > 0 ? (gastosPendientesTotal / ingresosTotalesPrevisibles) * 100 : 0;
 
-  document.getElementById('kpi-forecast').innerText = fmt(forecast);
-  document.getElementById('kpi-saldo-real').innerText = fmt(saldoRealPropio);
-  document.getElementById('kpi-ahorro-importe').innerText = fmt(capacidadAhorroImporte);
-  document.getElementById('lbl-kpi-ahorro-pct').innerText = `Ahorro: ${capacidadAhorroPct.toFixed(1)}%`;
-  document.getElementById('resumen-ingresos-totales').innerText = '+' + fmt(ingresosTotalesPrevisibles);
-  document.getElementById('resumen-ingresos-pendientes').innerText = '+' + fmt(ingresosPendientesTotal);
-  document.getElementById('resumen-gastos-reales').innerText = '-' + fmt(gastosReales);
-  document.getElementById('resumen-gastos-pendientes').innerText = '-' + fmt(gastosPendientesTotal);
-  document.getElementById('pct-gastos-reales').innerText = `${pctGastosReales.toFixed(1)}% s/ingresos`;
-  document.getElementById('pct-gastos-pendientes').innerText = `${pctGastosPendientes.toFixed(1)}% s/ingresos`;
-  document.getElementById('analisis-ahorro-importe').innerText = fmt(capacidadAhorroImporte);
-  document.getElementById('analisis-ahorro-pct').innerText = `${capacidadAhorroPct.toFixed(1)}%`;
+  setSignedAmount('kpi-forecast', forecast);
+  setSignedAmount('kpi-saldo-real', saldoRealPropio);
+  setSignedAmount('kpi-ahorro-importe', capacidadAhorroImporte);
+  setSignedValue('lbl-kpi-ahorro-pct', `Ahorro: ${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
+  setSignedAmount('resumen-ingresos-totales', ingresosTotalesPrevisibles, '+');
+  setSignedAmount('resumen-ingresos-pendientes', ingresosPendientesTotal, '+');
+  setSignedAmount('resumen-gastos-reales', gastosReales, '-', true);
+  setSignedAmount('resumen-gastos-pendientes', gastosPendientesTotal, '-', true);
+  setSignedValue('pct-gastos-reales', `${pctGastosReales.toFixed(1)}% s/ingresos`, pctGastosReales);
+  setSignedValue('pct-gastos-pendientes', `${pctGastosPendientes.toFixed(1)}% s/ingresos`, pctGastosPendientes);
+  setSignedAmount('analisis-ahorro-importe', capacidadAhorroImporte);
+  setSignedValue('analisis-ahorro-pct', `${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
 
   renderAcordeon('det-ingresos-totales', desgloseIngresosTotales, ingresosTotalesPrevisibles, 'text-emerald-700');
   renderAcordeon('det-ingresos-pendientes', desgloseIngresosPendientes, ingresosTotalesPrevisibles, 'text-emerald-600');
@@ -284,8 +284,8 @@ function renderAcordeon(containerId, datosObj, totalIngresos, colorTexto, esGast
       <div class="flex justify-between items-center py-1 border-b border-gray-200/50 last:border-0">
         <span class="font-medium text-gray-700">${cat}</span>
         <div class="text-right">
-          <span class="font-bold ${colorTexto} block">${fmt(monto)}</span>
-          ${esGasto ? `<span class="text-[9px] text-gray-500">${pctSobreIngresos.toFixed(1)}% s/ingresos</span>` : ''}
+          <span class="font-bold ${colorTexto} ${esGasto ? 'amount-negative' : amountClass(monto)} block tabular-amount">${fmt(monto)}</span>
+          ${esGasto ? `<span class="text-[9px] ${amountClass(pctSobreIngresos)}">${pctSobreIngresos.toFixed(1)}% s/ingresos</span>` : ''}
         </div>
       </div>
     `;
@@ -354,7 +354,7 @@ function renderCuentas() {
   cuentas.forEach(c => {
     const dif = c.saldoActual - c.saldoInicial;
     const miSaldoPropio = c.saldoActual * (c.participacion / 100);
-    const colorEvol = dif >= 0 ? 'text-emerald-600' : 'text-rose-600';
+    const colorEvol = amountClass(dif);
     const signoEvol = dif >= 0 ? '+' : '';
 
     container.innerHTML += `
@@ -362,18 +362,18 @@ function renderCuentas() {
         <div class="flex justify-between items-center">
           <div>
             <h3 class="text-xs font-bold text-gray-800">${c.nombre}</h3>
-            <span class="text-[10px] text-indigo-600 font-semibold">${c.participacion}% Titularidad Propia</span>
+            <span class="text-[10px] ${amountClass(c.participacion)} font-semibold">${c.participacion}% Titularidad Propia</span>
           </div>
           <button onclick="eliminarCuenta(${c.id}, event)" class="text-rose-400 hover:text-rose-600 text-xs font-bold">🗑️</button>
         </div>
         <div class="grid grid-cols-3 gap-2 bg-gray-50 p-2 rounded-lg text-center border border-gray-100">
           <div>
             <span class="text-[9px] text-gray-400 block uppercase">Inicial</span>
-            <span class="text-xs font-bold text-gray-600">${fmt(c.saldoInicial)}</span>
+            <span class="text-xs font-bold ${amountClass(c.saldoInicial)} tabular-amount">${fmt(c.saldoInicial)}</span>
           </div>
           <div>
             <span class="text-[9px] text-gray-400 block uppercase">Actual Total</span>
-            <span class="text-xs font-bold text-gray-800">${fmt(c.saldoActual)}</span>
+            <span class="text-xs font-bold ${amountClass(c.saldoActual)} tabular-amount">${fmt(c.saldoActual)}</span>
           </div>
           <div>
             <span class="text-[9px] text-gray-400 block uppercase">Evolución</span>
@@ -382,7 +382,7 @@ function renderCuentas() {
         </div>
         <div class="flex justify-between items-center pt-1 border-t border-gray-100 text-xs">
           <span class="text-gray-500 text-[11px]">Tu Saldo Real Disponible:</span>
-          <span class="font-extrabold text-indigo-700">${fmt(miSaldoPropio)}</span>
+          <span class="font-extrabold ${amountClass(miSaldoPropio)} tabular-amount">${fmt(miSaldoPropio)}</span>
         </div>
       </div>
     `;
@@ -525,34 +525,35 @@ function renderMovimientos() {
 
   filtrados.forEach(m => {
     const miImporte = m.importe * (m.participacion / 100);
-    let color = 'text-gray-800';
+    let color = 'amount-neutral';
     let signo = '-';
     let ctaTxt = '';
 
     if (m.esTransferencia) {
-      color = 'text-blue-600';
+      color = 'amount-neutral';
       signo = '🔄 ';
       const cOrig = cuentas.find(c => c.id === m.cuentaOrigenId);
       const cDest = cuentas.find(c => c.id === m.cuentaDestinoId);
       ctaTxt = `${cOrig ? cOrig.nombre : 'Cuenta'} ➔ ${cDest ? cDest.nombre : 'Cuenta'}`;
     } else {
       const tipo = obtenerTipoPorCategoria(m.categoria);
-      color = tipo === 'INGRESO' ? 'text-emerald-600' : 'text-gray-800';
+      color = tipo === 'INGRESO' ? 'amount-positive' : 'amount-negative';
       signo = tipo === 'INGRESO' ? '+' : '-';
       const c = cuentas.find(x => x.id === m.cuentaId);
       ctaTxt = c ? c.nombre : 'Sin Cuenta';
     }
 
+    const colorParticipacion = amountClass(m.participacion);
     container.innerHTML += `
       <div onclick="editarMovimiento(${m.id})" class="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-indigo-300 cursor-pointer transition">
         <div>
           <p class="text-xs font-bold text-gray-800">${m.concepto}</p>
-          <p class="text-[10px] text-gray-400">${m.esTransferencia ? '🔄 Transferencia' : m.categoria} • <span class="font-medium text-indigo-600">${ctaTxt}</span> • <span class="font-semibold text-gray-600">${m.fecha}</span></p>
+          <p class="text-[10px] text-gray-400">${m.esTransferencia ? '🔄 Transferencia' : m.categoria} • <span class="font-medium text-indigo-600">${ctaTxt}</span> • <span class="font-semibold text-gray-600">${m.fecha}</span>${m.participacion < 100 ? ` • <span class="font-semibold ${colorParticipacion}">${m.participacion}%</span>` : ''}</p>
         </div>
         <div class="flex items-center gap-3">
           <div class="text-right">
-            <span class="text-xs font-extrabold ${color} block">${signo}${fmt(miImporte)}</span>
-            ${m.participacion < 100 ? `<span class="text-[9px] text-gray-400">Total: ${fmt(m.importe)}</span>` : ''}
+            <span class="text-xs font-extrabold ${color} tabular-amount block">${signo}${fmt(miImporte)}</span>
+            ${m.participacion < 100 ? `<span class="text-[9px] ${m.esTransferencia ? 'amount-neutral' : obtenerTipoPorCategoria(m.categoria) === 'INGRESO' ? 'amount-positive' : 'amount-negative'} tabular-amount">Total: ${fmt(m.importe)}</span>` : ''}
           </div>
           <button onclick="eliminarMovimiento(${m.id}, event)" class="text-rose-400 hover:text-rose-600 font-bold text-sm">🗑️</button>
         </div>
@@ -614,10 +615,10 @@ function renderPresupuestos() {
   const pctAhorroGlobal = Math.max(0, 100 - pctHogarGlobal - pctOcioGlobal);
   const montoAhorroAnual = ingresosAnualesPresupuestados - totalGastoHogarAnual - totalGastoOcioAnual;
 
-  document.getElementById('pres-total-ingresos-lbl').innerText = `Ingresos: ${fmt(ingresosAnualesPresupuestados)}/año`;
-  document.getElementById('pres-pct-hogar').innerText = `${pctHogarGlobal.toFixed(1)}%`;
-  document.getElementById('pres-pct-ocio').innerText = `${pctOcioGlobal.toFixed(1)}%`;
-  document.getElementById('pres-pct-ahorro').innerText = `${pctAhorroGlobal.toFixed(1)}% (${fmt(montoAhorroAnual)})`;
+  setSignedValue('pres-total-ingresos-lbl', `Ingresos: ${fmt(ingresosAnualesPresupuestados)}/año`, ingresosAnualesPresupuestados);
+  setSignedValue('pres-pct-hogar', `${pctHogarGlobal.toFixed(1)}%`, pctHogarGlobal);
+  setSignedValue('pres-pct-ocio', `${pctOcioGlobal.toFixed(1)}%`, pctOcioGlobal);
+  setSignedValue('pres-pct-ahorro', `${pctAhorroGlobal.toFixed(1)}% (${fmt(montoAhorroAnual)})`, montoAhorroAnual);
   document.getElementById('bar-hogar').style.width = `${Math.min(100, pctHogarGlobal)}%`;
   document.getElementById('bar-ocio').style.width = `${Math.min(100 - pctHogarGlobal, pctOcioGlobal)}%`;
   document.getElementById('bar-ahorro').style.width = `${Math.min(100, pctAhorroGlobal)}%`;
@@ -650,15 +651,15 @@ function renderPresupuestos() {
             ${badgeGrupo}
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-gray-500 text-[11px] font-medium">${fmt(gastado)} / ${fmt(asignadoEscalado)}</span>
+            <span class="text-[11px] font-medium tabular-amount"><span class="${esIngreso ? amountClass(gastado) : 'amount-negative'}">${fmt(gastado)}</span> / <span class="${esIngreso ? amountClass(asignadoEscalado) : 'amount-negative'}">${fmt(asignadoEscalado)}</span></span>
             <button onclick="eliminarPresupuesto('${p.categoria}')" class="text-rose-400 hover:text-rose-600 text-xs font-bold">✕</button>
           </div>
         </div>
         <div class="flex justify-between items-center text-[10px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100">
-          <span>Recurrencia: <strong>${p.numMovimientosAnuales} movs/año</strong> de ${fmt(p.importeMovimiento)}</span>
+          <span>Recurrencia: <strong class="${amountClass(p.numMovimientosAnuales)}">${p.numMovimientosAnuales} movs/año</strong> de <strong class="${esIngreso ? amountClass(p.importeMovimiento) : 'amount-negative'} tabular-amount">${fmt(p.importeMovimiento)}</strong></span>
           <div class="text-right">
-            <span class="block">Anual: <strong class="text-gray-700">${fmt(totalAnual)}</strong></span>
-            ${!esIngreso ? `<span class="text-indigo-600 font-bold">${pctSobreIngreso.toFixed(1)}% s/ingresos</span>` : ''}
+            <span class="block">Anual: <strong class="${esIngreso ? amountClass(totalAnual) : 'amount-negative'} tabular-amount">${fmt(totalAnual)}</strong></span>
+            ${!esIngreso ? `<span class="${amountClass(pctSobreIngreso)} font-bold">${pctSobreIngreso.toFixed(1)}% s/ingresos</span>` : ''}
           </div>
         </div>
         ${!esIngreso ? `<div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden"><div class="${colorBarra} h-full rounded-full" style="width: ${pctEjecucion}%"></div></div>` : ''}
@@ -891,20 +892,22 @@ function calcularResultadoSimulacion() {
   };
 }
 
-function actualizarSimPresupuesto(index, campo, valor) {
+function actualizarSimPresupuesto(index, campo, valor, input) {
   const item = simPresupuestos[index];
   if (!item) return;
   item[campo] = Number(valor) || 0;
+  actualizarClaseImporte(input, Number(valor));
   const totalAnual = Number(item.importeMovimiento || 0) * Number(item.numMovimientosAnuales || 0);
-  document.getElementById(`sim-pres-total-${index}`).innerText = `${fmt(totalAnual)}/año`;
+  setSignedValue(`sim-pres-total-${index}`, `${fmt(totalAnual)}/año`, totalAnual);
   actualizarResumenSimulacion();
   guardarEstadoSimulacion();
 }
 
-function actualizarSimCuenta(id, valor) {
+function actualizarSimCuenta(id, valor, input) {
   const cuenta = simCuentas.find(c => c.id === id);
   if (!cuenta) return;
   cuenta.saldoActual = Number(valor) || 0;
+  actualizarClaseImporte(input, Number(valor));
   actualizarResumenSimulacion();
   guardarEstadoSimulacion();
 }
@@ -931,18 +934,18 @@ function actualizarResumenSimulacion() {
   const pctOcioGlobal = ingresosAnualesPresupuestados > 0 ? (totalGastoOcioAnual / ingresosAnualesPresupuestados) * 100 : 0;
   const pctAhorroGlobal = Math.max(0, 100 - pctHogarGlobal - pctOcioGlobal);
 
-  document.getElementById('sim-total-ingresos-lbl').innerText = `Ingresos: ${fmt(ingresosAnualesPresupuestados)}/año`;
-  document.getElementById('sim-pct-hogar').innerText = `${pctHogarGlobal.toFixed(1)}%`;
-  document.getElementById('sim-pct-ocio').innerText = `${pctOcioGlobal.toFixed(1)}%`;
-  document.getElementById('sim-pct-ahorro').innerText = `${pctAhorroGlobal.toFixed(1)}%`;
+  setSignedValue('sim-total-ingresos-lbl', `Ingresos: ${fmt(ingresosAnualesPresupuestados)}/año`, ingresosAnualesPresupuestados);
+  setSignedValue('sim-pct-hogar', `${pctHogarGlobal.toFixed(1)}%`, pctHogarGlobal);
+  setSignedValue('sim-pct-ocio', `${pctOcioGlobal.toFixed(1)}%`, pctOcioGlobal);
+  setSignedValue('sim-pct-ahorro', `${pctAhorroGlobal.toFixed(1)}%`, pctAhorroGlobal);
   document.getElementById('sim-bar-hogar').style.width = `${Math.min(100, pctHogarGlobal)}%`;
   document.getElementById('sim-bar-ocio').style.width = `${Math.min(100 - pctHogarGlobal, pctOcioGlobal)}%`;
   document.getElementById('sim-bar-ahorro').style.width = `${Math.min(100, pctAhorroGlobal)}%`;
 
-  document.getElementById('sim-forecast').innerText = fmt(datos.forecast);
-  document.getElementById('sim-saldo-real').innerText = fmt(datos.saldoSimuladoCuentas);
-  document.getElementById('sim-ahorro-importe').innerText = fmt(datos.capacidadAhorroImporte);
-  document.getElementById('sim-ahorro-pct').innerText = `${datos.capacidadAhorroPct.toFixed(1)}%`;
+  setSignedAmount('sim-forecast', datos.forecast);
+  setSignedAmount('sim-saldo-real', datos.saldoSimuladoCuentas);
+  setSignedAmount('sim-ahorro-importe', datos.capacidadAhorroImporte);
+  setSignedValue('sim-ahorro-pct', `${datos.capacidadAhorroPct.toFixed(1)}%`, datos.capacidadAhorroPct);
 }
 
 function renderSimulacion() {
@@ -966,16 +969,16 @@ function renderSimulacion() {
             <span class="text-xs font-bold text-gray-800">${p.categoria}</span>
             ${badge}
           </div>
-          <span id="sim-pres-total-${index}" class="text-[10px] text-gray-500">${fmt(Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0))}/año</span>
+          <span id="sim-pres-total-${index}" class="text-[10px] ${amountClass(Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0))} tabular-amount">${fmt(Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0))}/año</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-[9px] text-gray-500 font-bold block mb-1">Importe</label>
-            <input type="number" value="${Number(p.importeMovimiento || 0)}" oninput="actualizarSimPresupuesto(${index}, 'importeMovimiento', this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+            <input type="number" value="${Number(p.importeMovimiento || 0)}" oninput="actualizarSimPresupuesto(${index}, 'importeMovimiento', this.value, this)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white ${amountClass(p.importeMovimiento)}">
           </div>
           <div>
             <label class="text-[9px] text-gray-500 font-bold block mb-1">Nº movs</label>
-            <input type="number" min="1" value="${Number(p.numMovimientosAnuales || 0)}" oninput="actualizarSimPresupuesto(${index}, 'numMovimientosAnuales', this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+            <input type="number" min="1" value="${Number(p.numMovimientosAnuales || 0)}" oninput="actualizarSimPresupuesto(${index}, 'numMovimientosAnuales', this.value, this)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white ${amountClass(p.numMovimientosAnuales)}">
           </div>
         </div>
       </div>
@@ -989,10 +992,10 @@ function renderSimulacion() {
       <div class="bg-white rounded-xl border border-gray-200 p-2.5">
         <div class="flex justify-between items-center mb-2">
           <span class="text-xs font-bold text-gray-800">${c.nombre}</span>
-          <span class="text-[10px] text-indigo-600 font-semibold">${Number(c.participacion || 100)}% propio</span>
+          <span class="text-[10px] ${amountClass(Number(c.participacion || 100))} font-semibold">${Number(c.participacion || 100)}% propio</span>
         </div>
         <label class="text-[9px] text-gray-500 font-bold block mb-1">Importe</label>
-        <input type="number" value="${Number(c.saldoActual || 0)}" oninput="actualizarSimCuenta(${c.id}, this.value)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white">
+        <input type="number" value="${Number(c.saldoActual || 0)}" oninput="actualizarSimCuenta(${c.id}, this.value, this)" class="w-full h-9 px-2 text-xs border rounded-lg bg-white ${amountClass(c.saldoActual)}">
       </div>
     `;
   });
@@ -1021,6 +1024,28 @@ function switchTab(tab) {
 
 function fmt(val) {
   return Number(val).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+}
+
+function amountClass(value) {
+  return value > 0 ? 'amount-positive' : value < 0 ? 'amount-negative' : 'amount-neutral';
+}
+
+function actualizarClaseImporte(element, value) {
+  if (!element) return;
+  element.classList.remove('amount-positive', 'amount-negative', 'amount-neutral');
+  element.classList.add(amountClass(value));
+}
+
+function setSignedValue(id, text, signValue) {
+  const element = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!element) return;
+  element.innerText = text;
+  actualizarClaseImporte(element, signValue);
+}
+
+function setSignedAmount(id, value, prefix = '', negativeAsMagnitude = false) {
+  const displayValue = negativeAsMagnitude ? `${prefix}${fmt(Math.abs(value))}` : `${prefix}${fmt(value)}`;
+  setSignedValue(id, displayValue, negativeAsMagnitude ? -Math.abs(value) : value);
 }
 
 if ('serviceWorker' in navigator) {

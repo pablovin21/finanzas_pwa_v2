@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#9f2438" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Finanzas" />
@@ -80,11 +80,11 @@
       </header>
 
       <nav class="flex border-b border-gray-200 bg-white sticky top-0 z-10 text-[11px]">
-        <button onclick="switchTab('resumen')" id="tab-resumen" class="flex-1 py-3 text-center font-bold border-b-2 border-indigo-600 text-indigo-600">📊 Resumen</button>
-        <button onclick="switchTab('cuentas')" id="tab-cuentas" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🏦 Cuentas</button>
-        <button onclick="switchTab('movimientos')" id="tab-movimientos" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">💸 Movs</button>
-        <button onclick="switchTab('presupuesto')" id="tab-presupuesto" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🎯 Ppto</button>
-        <button onclick="switchTab('simular')" id="tab-simular" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700">🧪 Simular</button>
+        <button onclick="switchTab('resumen')" id="tab-resumen" aria-label="Resumen" class="flex-1 py-3 text-center font-bold border-b-2 border-indigo-600 text-indigo-600"><span>📊</span><span>Resumen</span></button>
+        <button onclick="switchTab('cuentas')" id="tab-cuentas" aria-label="Cuentas" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700"><span>🏦</span><span>Cuentas</span></button>
+        <button onclick="switchTab('movimientos')" id="tab-movimientos" aria-label="Movimientos" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700"><span>💸</span><span>Movs</span></button>
+        <button onclick="switchTab('presupuesto')" id="tab-presupuesto" aria-label="Presupuesto" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700"><span>🎯</span><span>Ppto</span></button>
+        <button onclick="switchTab('simular')" id="tab-simular" aria-label="Simular" class="flex-1 py-3 text-center font-semibold text-gray-500 hover:text-gray-700"><span>🧪</span><span>Simular</span></button>
       </nav>
 
       <main class="flex-1 p-4 overflow-y-auto">
