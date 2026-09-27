@@ -388,11 +388,16 @@ body {
   z-index: 1;
 }
 
+.app-container > header {
+  padding: max(10px, env(safe-area-inset-top)) 16px 12px;
+}
+
 .app-container > header > div:first-child {
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   gap: 6px;
   align-items: center;
+  margin-bottom: 8px !important;
 }
 
 .app-container > header > div:first-child > button {
@@ -410,13 +415,14 @@ body {
   position: relative;
   z-index: 2;
   width: 100%;
+  margin-bottom: 8px !important;
 }
 
 .app-container > header .period-controls input[type="month"] {
   flex: 0 0 126px;
   width: 126px;
   min-width: 126px;
-  height: 36px;
+  height: 32px;
   padding-inline: 6px;
   color: var(--app-red-dark);
   color-scheme: light;
@@ -432,7 +438,7 @@ body {
 .app-container > header .period-controls select {
   flex: 0 0 126px;
   width: 126px;
-  height: 36px;
+  height: 32px;
   padding-inline: 6px;
   color: var(--app-red-dark);
   font-size: 11px;
@@ -490,13 +496,68 @@ body {
   background: rgba(80, 12, 24, 0.23);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.11);
   backdrop-filter: blur(14px);
+  padding: 8px !important;
 }
 
-.app-container > header #kpi-forecast {
-  font-size: 31px;
-  letter-spacing: 0;
+.app-container > header .header-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 4px;
+}
+
+.app-container > header .header-kpi {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 3px;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.app-container > header .header-kpi:last-child {
+  border-right: 0;
+}
+
+.app-container > header .header-kpi-label {
+  overflow: hidden;
+  color: rgba(255, 237, 234, 0.78);
+  font-size: 8px;
+  font-weight: 600;
   line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.app-container > header .header-kpi-value {
+  overflow: hidden;
+  color: white;
+  font-size: 9px;
+  font-weight: 750;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: clip;
   font-variant-numeric: tabular-nums;
+}
+
+.app-container > header #kpi-ahorro-importe,
+.app-container > header #lbl-kpi-ahorro-pct {
+  color: #72e0a0 !important;
+}
+
+@media (max-width: 360px) {
+  .app-container > header .header-kpis {
+    gap: 1px;
+  }
+
+  .app-container > header .header-kpi {
+    padding-inline: 2px;
+  }
+
+  .app-container > header .header-kpi-value {
+    font-size: 8px;
+  }
 }
 
 .app-container > nav {

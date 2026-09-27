@@ -247,7 +247,7 @@ function calcularFinanzas() {
   setSignedAmount('kpi-forecast', forecast);
   setSignedAmount('kpi-saldo-real', saldoRealPropio);
   setSignedAmount('kpi-ahorro-importe', capacidadAhorroImporte);
-  setSignedValue('lbl-kpi-ahorro-pct', `Ahorro: ${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
+  setSignedValue('lbl-kpi-ahorro-pct', `${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
   setSignedAmount('resumen-ingresos-totales', ingresosTotalesPrevisibles, '+');
   setSignedAmount('resumen-ingresos-pendientes', ingresosPendientesTotal, '+');
   setSignedAmount('resumen-gastos-reales', gastosReales, '-', true);
@@ -856,7 +856,7 @@ function actualizarSelectoresCuentas() {
 function cambiarVistaTemporal(valor) {
   vistaActual = valor;
   actualizarTituloPeriodo();
-  document.getElementById('lbl-kpi-forecast').innerText = valor === 'MES' ? 'Estimación Cierre de Mes' : 'Estimación Cierre de Año';
+  document.getElementById('lbl-kpi-forecast').innerText = valor === 'MES' ? 'Cierre mes' : 'Cierre año';
   document.getElementById('txt-vista-actual').innerText = valor === 'MES' ? 'Mes' : 'Año Completo';
   calcularFinanzas();
 }

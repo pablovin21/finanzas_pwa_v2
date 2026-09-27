@@ -66,19 +66,22 @@
           </select>
         </div>
         <div class="bg-indigo-700/60 backdrop-blur-md rounded-xl p-4 border border-indigo-400/30">
-          <div class="flex justify-between items-center text-xs text-indigo-200 font-medium">
-            <span id="lbl-kpi-forecast">Estimación Cierre de Mes</span>
-            <span id="lbl-kpi-ahorro-pct" class="bg-emerald-500 text-white px-2 py-0.5 rounded font-bold">Ahorro: 0%</span>
-          </div>
-          <div class="text-3xl font-extrabold mt-1" id="kpi-forecast">0,00 €</div>
-          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-indigo-500/40 text-xs">
-            <div>
-              <span class="text-indigo-200 block">Saldo Real Propio:</span>
-              <span class="font-bold text-sm" id="kpi-saldo-real">0,00 €</span>
+          <div class="header-kpis">
+            <div class="header-kpi">
+              <span class="header-kpi-label" id="lbl-kpi-forecast">Cierre mes</span>
+              <span class="header-kpi-value" id="kpi-forecast">0,00 €</span>
             </div>
-            <div>
-              <span class="text-indigo-200 block">Estimación Ahorro:</span>
-              <span class="font-bold text-sm text-emerald-300" id="kpi-ahorro-importe">0,00 €</span>
+            <div class="header-kpi">
+              <span class="header-kpi-label">% ahorro</span>
+              <span class="header-kpi-value" id="lbl-kpi-ahorro-pct">0%</span>
+            </div>
+            <div class="header-kpi">
+              <span class="header-kpi-label">Saldo</span>
+              <span class="header-kpi-value" id="kpi-saldo-real">0,00 €</span>
+            </div>
+            <div class="header-kpi">
+              <span class="header-kpi-label">Ahorro</span>
+              <span class="header-kpi-value" id="kpi-ahorro-importe">0,00 €</span>
             </div>
           </div>
         </div>
