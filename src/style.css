@@ -413,11 +413,11 @@ body {
 }
 
 .app-container > header .period-controls input[type="month"] {
-  flex: 1 1 0;
-  width: 1%;
-  min-width: 0;
-  height: 40px;
-  padding-inline: 10px;
+  flex: 0 0 126px;
+  width: 126px;
+  min-width: 126px;
+  height: 36px;
+  padding-inline: 6px;
   color: var(--app-red-dark);
   color-scheme: light;
   accent-color: var(--app-coral);
@@ -432,8 +432,8 @@ body {
 .app-container > header .period-controls select {
   flex: 0 0 126px;
   width: 126px;
-  height: 40px;
-  padding-inline: 8px;
+  height: 36px;
+  padding-inline: 6px;
   color: var(--app-red-dark);
   font-size: 11px;
   font-weight: 700;
@@ -508,7 +508,8 @@ body {
   flex: 0 0 auto;
   width: 100%;
   box-sizing: border-box;
-  padding: 7px max(0px, env(safe-area-inset-left)) max(7px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-right));
+  gap: 0;
+  padding: 3px max(0px, env(safe-area-inset-left)) max(3px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-right));
   border-top: 1px solid rgba(80, 42, 42, 0.1);
   border-bottom: 0;
   background: rgba(255, 253, 252, 0.94);
@@ -523,14 +524,14 @@ body {
   gap: 2px;
   flex: 1 1 0;
   min-width: 0;
-  min-height: 48px;
-  padding: 7px 2px;
+  min-height: 44px;
+  padding: 5px 0;
   color: #817472;
   font-size: 9px;
   font-weight: 650;
   line-height: 1.2;
   border-bottom-width: 0 !important;
-  border-radius: 12px;
+  border-radius: 8px;
   transition: color 160ms ease, background-color 160ms ease;
 }
 
