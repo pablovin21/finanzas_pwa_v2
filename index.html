@@ -55,7 +55,12 @@
             <h1 class="text-base font-bold text-indigo-100">Control gastos</h1>
             <p class="text-base font-bold" id="periodo-titulo">Septiembre 2026</p>
           </div>
-          <select id="selector-vista" onchange="cambiarVistaTemporal(this.value)" class="bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
+        </div>
+        <div class="period-controls flex items-center gap-2 mb-4">
+          <label class="sr-only" for="selector-periodo">Seleccionar mes y año</label>
+          <input id="selector-periodo" type="month" aria-label="Seleccionar mes y año" onchange="cambiarPeriodo(this.value)" class="bg-indigo-800 text-xs px-2 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
+          <label class="sr-only" for="selector-vista">Tipo de vista</label>
+          <select id="selector-vista" aria-label="Tipo de vista" onchange="cambiarVistaTemporal(this.value)" class="bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
             <option value="MES">Vista: Mes</option>
             <option value="ANIO">Vista: Año</option>
           </select>

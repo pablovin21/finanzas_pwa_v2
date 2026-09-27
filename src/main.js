@@ -6,6 +6,7 @@ const STORE_NAME = 'appState';
 
 let dbPromise;
 let vistaActual = 'MES';
+let periodoSeleccionado = new Date().toISOString().slice(0, 7);
 let simPresupuestos = [];
 let simCuentas = [];
 let ejercicios = [];
@@ -198,11 +199,12 @@ function obtenerTipoPorCategoria(nombreCat) {
 
 function calcularFinanzas() {
   const multEscala = vistaActual === 'ANIO' ? 12 : 1;
+  const movimientosPeriodo = movimientos.filter(m => perteneceAlPeriodo(m.fecha));
   const saldoRealPropio = cuentas.reduce((acc, c) => acc + (c.saldoActual * (c.participacion / 100)), 0);
-  const ingresosReales = movimientos
+  const ingresosReales = movimientosPeriodo
     .filter(m => !m.esTransferencia && obtenerTipoPorCategoria(m.categoria) === 'INGRESO')
     .reduce((acc, m) => acc + (m.importe * (m.participacion / 100)), 0);
-  const gastosReales = movimientos
+  const gastosReales = movimientosPeriodo
     .filter(m => !m.esTransferencia && obtenerTipoPorCategoria(m.categoria) === 'GASTO')
     .reduce((acc, m) => acc + (m.importe * (m.participacion / 100)), 0);
 
@@ -217,7 +219,7 @@ function calcularFinanzas() {
     const pres = presupuestos.find(p => p.categoria === cat.nombre);
     const presMensualBase = pres ? (pres.importeMovimiento * pres.numMovimientosAnuales) / 12 : 0;
     const asignadoEscalado = presMensualBase * multEscala;
-    const ejecutadoCat = movimientos
+    const ejecutadoCat = movimientosPeriodo
       .filter(m => !m.esTransferencia && m.categoria === cat.nombre)
       .reduce((acc, m) => acc + (m.importe * (m.participacion / 100)), 0);
 
@@ -633,6 +635,7 @@ function renderPresupuestos() {
     const asignadoEscalado = mensualBase * multEscala;
     const pctSobreIngreso = ingresosAnualesPresupuestados > 0 ? (totalAnual / ingresosAnualesPresupuestados) * 100 : 0;
     const gastado = movimientos
+      .filter(m => perteneceAlPeriodo(m.fecha))
       .filter(m => !m.esTransferencia && m.categoria === p.categoria)
       .reduce((acc, m) => acc + (m.importe * (m.participacion / 100)), 0);
     const pctEjecucion = !esIngreso ? Math.min(100, Math.round((gastado / asignadoEscalado) * 100)) : 100;
@@ -852,11 +855,35 @@ function actualizarSelectoresCuentas() {
 
 function cambiarVistaTemporal(valor) {
   vistaActual = valor;
-  const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || '2026';
-  document.getElementById('periodo-titulo').innerText = valor === 'MES' ? `Septiembre ${nombreEjercicio}` : `Ejercicio ${nombreEjercicio}`;
+  actualizarTituloPeriodo();
   document.getElementById('lbl-kpi-forecast').innerText = valor === 'MES' ? 'Estimación Cierre de Mes' : 'Estimación Cierre de Año';
   document.getElementById('txt-vista-actual').innerText = valor === 'MES' ? 'Mes' : 'Año Completo';
   calcularFinanzas();
+}
+
+function cambiarPeriodo(valor) {
+  if (!/^\d{4}-\d{2}$/.test(valor)) return;
+  periodoSeleccionado = valor;
+  actualizarTituloPeriodo();
+  calcularFinanzas();
+}
+
+function perteneceAlPeriodo(fecha) {
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
+  return vistaActual === 'ANIO'
+    ? fecha.startsWith(periodoSeleccionado.slice(0, 4))
+    : fecha.startsWith(periodoSeleccionado);
+}
+
+function actualizarTituloPeriodo() {
+  const [anio, mes] = periodoSeleccionado.split('-').map(Number);
+  const fechaPeriodo = new Date(anio, mes - 1, 1);
+  const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(fechaPeriodo);
+  const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || String(anio);
+  document.getElementById('periodo-titulo').innerText = vistaActual === 'MES'
+    ? `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${anio}`
+    : `Ejercicio ${anio}${nombreEjercicio !== String(anio) ? ` · ${nombreEjercicio}` : ''}`;
+  document.getElementById('selector-periodo').value = periodoSeleccionado;
 }
 
 function resetSimulacion() {
@@ -1058,6 +1085,7 @@ window.toggleMenu = toggleMenu;
 window.toggleAcordion = toggleAcordion;
 window.switchTab = switchTab;
 window.cambiarVistaTemporal = cambiarVistaTemporal;
+window.cambiarPeriodo = cambiarPeriodo;
 window.resetSimulacion = resetSimulacion;
 window.actualizarSimPresupuesto = actualizarSimPresupuesto;
 window.actualizarSimCuenta = actualizarSimCuenta;
@@ -1084,8 +1112,10 @@ window.calcularFinanzas = calcularFinanzas;
 loadState().then(async () => {
   if (await cargarEstadoSimulacion()) renderSimulacion();
   else resetSimulacion();
-  const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || '2026';
-  document.getElementById('periodo-titulo').innerText = `Septiembre ${nombreEjercicio}`;
+  const fechaMovimientoReciente = movimientos.map(m => m.fecha).filter(Boolean).sort().at(-1);
+  if (fechaMovimientoReciente) periodoSeleccionado = fechaMovimientoReciente.slice(0, 7);
+  document.getElementById('selector-periodo').value = periodoSeleccionado;
+  actualizarTituloPeriodo();
   renderConfiguracion();
   calcularFinanzas();
 });

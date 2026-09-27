@@ -390,7 +390,7 @@ body {
 
 .app-container > header > div:first-child {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) 82px;
+  grid-template-columns: 38px minmax(0, 1fr);
   gap: 6px;
   align-items: center;
 }
@@ -402,14 +402,58 @@ body {
   font-size: 14px;
 }
 
-.app-container > header > div:first-child > select {
-  width: 82px;
-  padding: 6px 4px;
-  font-size: 10px;
-}
-
 .app-container > header > div:first-child > div {
   min-width: 0;
+}
+
+.app-container > header .period-controls {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.app-container > header .period-controls input[type="month"] {
+  flex: 1 1 0;
+  width: 1%;
+  min-width: 0;
+  height: 40px;
+  padding-inline: 10px;
+  color: var(--app-red-dark);
+  color-scheme: light;
+  accent-color: var(--app-coral);
+  border: 1px solid rgba(255, 231, 226, 0.9);
+  border-radius: 12px;
+  background: #fff5f2;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(64, 12, 25, 0.12);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-container > header .period-controls select {
+  flex: 0 0 126px;
+  width: 126px;
+  height: 40px;
+  padding-inline: 8px;
+  color: var(--app-red-dark);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 231, 226, 0.9);
+  border-radius: 12px;
+  background: #fff5f2;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(64, 12, 25, 0.12);
+  cursor: pointer;
+}
+
+.app-container > header .period-controls select option {
+  color: var(--app-ink);
+  background: #fffaf9;
+}
+
+.app-container > header .period-controls input[type="month"]:focus-visible,
+.app-container > header .period-controls select:focus-visible {
+  border-color: #ffb2a6;
+  outline: 3px solid rgba(255, 207, 195, 0.4);
+  outline-offset: 1px;
 }
 
 .app-container > header h1 {
@@ -438,7 +482,7 @@ body {
   backdrop-filter: blur(12px);
 }
 
-.app-container > header > div:nth-child(2) {
+.app-container > header > div:nth-child(3) {
   position: relative;
   z-index: 1;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -462,7 +506,9 @@ body {
   z-index: 20;
   order: 3;
   flex: 0 0 auto;
-  padding: 7px 5px max(7px, env(safe-area-inset-bottom));
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px max(0px, env(safe-area-inset-left)) max(7px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-right));
   border-top: 1px solid rgba(80, 42, 42, 0.1);
   border-bottom: 0;
   background: rgba(255, 253, 252, 0.94);
@@ -475,6 +521,7 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 2px;
+  flex: 1 1 0;
   min-width: 0;
   min-height: 48px;
   padding: 7px 2px;
