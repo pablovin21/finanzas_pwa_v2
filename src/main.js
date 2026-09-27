@@ -102,6 +102,58 @@ async function loadState() {
   });
 }
 
+async function guardarEstadoSimulacion() {
+  const data = { presupuestos: simPresupuestos, cuentas: simCuentas };
+  try {
+    const db = await openDatabase();
+    if (!db) throw new Error('IndexedDB no disponible');
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put({ id: 'simulation', data });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } catch (error) {
+    console.warn('No se pudo guardar la simulación en IndexedDB', error);
+    try {
+      localStorage.setItem('finanzasFamiliaresSimulation', JSON.stringify(data));
+    } catch (storageError) {
+      console.warn('No se pudo guardar la simulación localmente', storageError);
+    }
+  }
+}
+
+async function cargarEstadoSimulacion() {
+  let data;
+  try {
+    const db = await openDatabase();
+    if (db) {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const request = tx.objectStore(STORE_NAME).get('simulation');
+      data = await new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result?.data);
+        request.onerror = () => reject(request.error);
+      });
+    }
+  } catch (error) {
+    console.warn('No se pudo cargar la simulación de IndexedDB', error);
+  }
+
+  if (!data) {
+    try {
+      data = JSON.parse(localStorage.getItem('finanzasFamiliaresSimulation') || 'null');
+    } catch (error) {
+      console.warn('No se pudo leer la simulación local', error);
+    }
+  }
+
+  if (!data || !Array.isArray(data.presupuestos) || !Array.isArray(data.cuentas)) return false;
+  simPresupuestos = data.presupuestos.map(p => ({ ...p }));
+  simCuentas = data.cuentas.map(c => ({ ...c }));
+  return true;
+}
+
 function obtenerTipoPorCategoria(nombreCat) {
   const cat = categorias.find(c => c.nombre === nombreCat);
   return cat && cat.grupo === 'Ingreso' ? 'INGRESO' : 'GASTO';
@@ -642,11 +694,12 @@ function resetSimulacion() {
   simPresupuestos = presupuestos.map(p => ({ ...p }));
   simCuentas = cuentas.map(c => ({ ...c }));
   renderSimulacion();
+  guardarEstadoSimulacion();
 }
 
 function calcularResultadoSimulacion() {
-  const saldoSimuladoCuentas = simCuentas.reduce((acc, c) => acc + Number(c.saldoActual || 0), 0);
-  const saldoInicialCuentas = cuentas.reduce((acc, c) => acc + Number(c.saldoInicial || 0), 0);
+  const saldoSimuladoCuentas = simCuentas.reduce((acc, c) => acc + (Number(c.saldoActual || 0) * (Number(c.participacion ?? 100) / 100)), 0);
+  const saldoInicialCuentas = cuentas.reduce((acc, c) => acc + (Number(c.saldoInicial || 0) * (Number(c.participacion ?? 100) / 100)), 0);
   const ingresosSimulados = simPresupuestos
     .filter(p => obtenerTipoPorCategoria(p.categoria) === 'INGRESO')
     .reduce((acc, p) => acc + (Number(p.importeMovimiento || 0) * Number(p.numMovimientosAnuales || 0)), 0);
@@ -677,6 +730,7 @@ function actualizarSimPresupuesto(index, campo, valor) {
   const totalAnual = Number(item.importeMovimiento || 0) * Number(item.numMovimientosAnuales || 0);
   document.getElementById(`sim-pres-total-${index}`).innerText = `${fmt(totalAnual)}/año`;
   actualizarResumenSimulacion();
+  guardarEstadoSimulacion();
 }
 
 function actualizarSimCuenta(id, valor) {
@@ -684,6 +738,7 @@ function actualizarSimCuenta(id, valor) {
   if (!cuenta) return;
   cuenta.saldoActual = Number(valor) || 0;
   actualizarResumenSimulacion();
+  guardarEstadoSimulacion();
 }
 
 function actualizarResumenSimulacion() {
@@ -829,7 +884,8 @@ window.guardarPresupuesto = guardarPresupuesto;
 window.eliminarPresupuesto = eliminarPresupuesto;
 window.calcularFinanzas = calcularFinanzas;
 
-loadState().then(() => {
-  resetSimulacion();
+loadState().then(async () => {
+  if (await cargarEstadoSimulacion()) renderSimulacion();
+  else resetSimulacion();
   calcularFinanzas();
 });
