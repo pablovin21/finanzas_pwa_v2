@@ -284,7 +284,7 @@ function renderCapacidadAhorro(estimada, porcentajeEstimado, real, porcentajeRea
   const porcentaje = esReal ? porcentajeReal : porcentajeEstimado;
   const etiqueta = esReal ? 'real' : 'estimada';
 
-  document.getElementById('analisis-ahorro-titulo').innerText = `Capacidad de ahorro ${etiqueta}`;
+  document.getElementById('analisis-ahorro-titulo').innerText = `Capacidad ${etiqueta}`;
   document.getElementById('analisis-ahorro-descripcion').innerText = esReal
     ? 'Ingresos cobrados menos gastos realizados en el periodo.'
     : 'Resultado neto estimado tras restar el total de gastos a los ingresos previstos.';
