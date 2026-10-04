@@ -880,10 +880,12 @@ function actualizarTituloPeriodo() {
   const fechaPeriodo = new Date(anio, mes - 1, 1);
   const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(fechaPeriodo);
   const nombreEjercicio = ejercicios.find(e => e.id === ejercicioActivoId)?.nombre || String(anio);
+  const selectorPeriodo = document.getElementById('selector-periodo');
   document.getElementById('periodo-titulo').innerText = vistaActual === 'MES'
     ? `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${anio}`
     : `Ejercicio ${anio}${nombreEjercicio !== String(anio) ? ` · ${nombreEjercicio}` : ''}`;
-  document.getElementById('selector-periodo').value = periodoSeleccionado;
+  selectorPeriodo.value = periodoSeleccionado;
+  selectorPeriodo.hidden = vistaActual === 'ANIO';
 }
 
 function resetSimulacion() {

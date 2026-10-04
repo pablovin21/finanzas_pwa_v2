@@ -57,13 +57,13 @@
           </div>
         </div>
         <div class="period-controls flex items-center gap-2 mb-4">
-          <label class="sr-only" for="selector-periodo">Seleccionar mes y año</label>
-          <input id="selector-periodo" type="month" aria-label="Seleccionar mes y año" onchange="cambiarPeriodo(this.value)" class="bg-indigo-800 text-xs px-2 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
           <label class="sr-only" for="selector-vista">Tipo de vista</label>
           <select id="selector-vista" aria-label="Tipo de vista" onchange="cambiarVistaTemporal(this.value)" class="bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
             <option value="MES">Vista: Mes</option>
             <option value="ANIO">Vista: Año</option>
           </select>
+          <label class="sr-only" for="selector-periodo">Seleccionar mes y año</label>
+          <input id="selector-periodo" type="month" aria-label="Seleccionar mes y año" onchange="cambiarPeriodo(this.value)" class="bg-indigo-800 text-xs px-2 py-1.5 rounded-lg font-medium border border-indigo-500 focus:outline-none">
         </div>
         <div class="bg-indigo-700/60 backdrop-blur-md rounded-xl p-4 border border-indigo-400/30">
           <div class="header-kpis">
