@@ -6,6 +6,7 @@ const STORE_NAME = 'appState';
 
 let dbPromise;
 let vistaActual = 'MES';
+let vistaCapacidadAhorro = 'ESTIMADA';
 let periodoSeleccionado = new Date().toISOString().slice(0, 7);
 let simPresupuestos = [];
 let simCuentas = [];
@@ -241,6 +242,8 @@ function calcularFinanzas() {
   const forecast = saldoRealPropio + ingresosPendientesTotal - gastosPendientesTotal;
   const capacidadAhorroImporte = ingresosTotalesPrevisibles - gastosTotalesPrevisibles;
   const capacidadAhorroPct = ingresosTotalesPrevisibles > 0 ? (capacidadAhorroImporte / ingresosTotalesPrevisibles) * 100 : 0;
+  const capacidadAhorroReal = ingresosReales - gastosReales;
+  const capacidadAhorroRealPct = ingresosReales > 0 ? (capacidadAhorroReal / ingresosReales) * 100 : 0;
   const pctGastosReales = ingresosTotalesPrevisibles > 0 ? (gastosReales / ingresosTotalesPrevisibles) * 100 : 0;
   const pctGastosPendientes = ingresosTotalesPrevisibles > 0 ? (gastosPendientesTotal / ingresosTotalesPrevisibles) * 100 : 0;
 
@@ -254,8 +257,7 @@ function calcularFinanzas() {
   setSignedAmount('resumen-gastos-pendientes', gastosPendientesTotal, '-', true);
   setSignedValue('pct-gastos-reales', `${pctGastosReales.toFixed(1)}% s/ingresos`, pctGastosReales);
   setSignedValue('pct-gastos-pendientes', `${pctGastosPendientes.toFixed(1)}% s/ingresos`, pctGastosPendientes);
-  setSignedAmount('analisis-ahorro-importe', capacidadAhorroImporte);
-  setSignedValue('analisis-ahorro-pct', `${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
+  renderCapacidadAhorro(capacidadAhorroImporte, capacidadAhorroPct, capacidadAhorroReal, capacidadAhorroRealPct);
 
   renderAcordeon('det-ingresos-totales', desgloseIngresosCobrados, ingresosReales, 'text-emerald-700');
   renderAcordeon('det-ingresos-pendientes', desgloseIngresosPendientes, ingresosTotalesPrevisibles, 'text-emerald-600');
@@ -268,6 +270,36 @@ function calcularFinanzas() {
   renderConfiguracion();
   actualizarSelectoresCategorias();
   actualizarSelectoresCuentas();
+}
+
+function cambiarVistaCapacidadAhorro(vista) {
+  if (vista !== 'ESTIMADA' && vista !== 'REAL') return;
+  vistaCapacidadAhorro = vista;
+  calcularFinanzas();
+}
+
+function renderCapacidadAhorro(estimada, porcentajeEstimado, real, porcentajeReal) {
+  const esReal = vistaCapacidadAhorro === 'REAL';
+  const importe = esReal ? real : estimada;
+  const porcentaje = esReal ? porcentajeReal : porcentajeEstimado;
+  const etiqueta = esReal ? 'real' : 'estimada';
+
+  document.getElementById('analisis-ahorro-titulo').innerText = `Capacidad de ahorro ${etiqueta}`;
+  document.getElementById('analisis-ahorro-descripcion').innerText = esReal
+    ? 'Ingresos cobrados menos gastos realizados en el periodo.'
+    : 'Resultado neto estimado tras restar el total de gastos a los ingresos previstos.';
+  setSignedAmount('analisis-ahorro-importe', importe);
+  setSignedValue('analisis-ahorro-pct', `${porcentaje.toFixed(1)}%`, porcentaje);
+
+  ['ESTIMADA', 'REAL'].forEach(vista => {
+    const boton = document.getElementById(`btn-ahorro-${vista.toLowerCase()}`);
+    const activo = vista === vistaCapacidadAhorro;
+    boton.setAttribute('aria-pressed', String(activo));
+    boton.classList.toggle('bg-white', activo);
+    boton.classList.toggle('text-slate-900', activo);
+    boton.classList.toggle('shadow-sm', activo);
+    boton.classList.toggle('text-slate-300', !activo);
+  });
 }
 
 function renderAcordeon(containerId, datosObj, totalIngresos, colorTexto, esGasto = false) {
@@ -1088,6 +1120,7 @@ window.toggleAcordion = toggleAcordion;
 window.switchTab = switchTab;
 window.cambiarVistaTemporal = cambiarVistaTemporal;
 window.cambiarPeriodo = cambiarPeriodo;
+window.cambiarVistaCapacidadAhorro = cambiarVistaCapacidadAhorro;
 window.resetSimulacion = resetSimulacion;
 window.actualizarSimPresupuesto = actualizarSimPresupuesto;
 window.actualizarSimCuenta = actualizarSimCuenta;
