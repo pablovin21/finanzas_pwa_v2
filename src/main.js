@@ -210,7 +210,7 @@ function calcularFinanzas() {
 
   let ingresosPendientesTotal = 0;
   let gastosPendientesTotal = 0;
-  const desgloseIngresosTotales = {};
+  const desgloseIngresosCobrados = {};
   const desgloseIngresosPendientes = {};
   const desgloseGastosReales = {};
   const desgloseGastosPendientes = {};
@@ -226,7 +226,7 @@ function calcularFinanzas() {
     if (cat.grupo === 'Ingreso') {
       const pendiente = Math.max(0, asignadoEscalado - ejecutadoCat);
       ingresosPendientesTotal += pendiente;
-      desgloseIngresosTotales[cat.nombre] = Math.max(asignadoEscalado, ejecutadoCat);
+      if (ejecutadoCat > 0) desgloseIngresosCobrados[cat.nombre] = ejecutadoCat;
       desgloseIngresosPendientes[cat.nombre] = pendiente;
     } else {
       const pendiente = Math.max(0, asignadoEscalado - ejecutadoCat);
@@ -248,7 +248,7 @@ function calcularFinanzas() {
   setSignedAmount('kpi-saldo-real', saldoRealPropio);
   setSignedAmount('kpi-ahorro-importe', capacidadAhorroImporte);
   setSignedValue('lbl-kpi-ahorro-pct', `${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
-  setSignedAmount('resumen-ingresos-totales', ingresosTotalesPrevisibles, '+');
+  setSignedAmount('resumen-ingresos-totales', ingresosReales, '+');
   setSignedAmount('resumen-ingresos-pendientes', ingresosPendientesTotal, '+');
   setSignedAmount('resumen-gastos-reales', gastosReales, '-', true);
   setSignedAmount('resumen-gastos-pendientes', gastosPendientesTotal, '-', true);
@@ -257,7 +257,7 @@ function calcularFinanzas() {
   setSignedAmount('analisis-ahorro-importe', capacidadAhorroImporte);
   setSignedValue('analisis-ahorro-pct', `${capacidadAhorroPct.toFixed(1)}%`, capacidadAhorroPct);
 
-  renderAcordeon('det-ingresos-totales', desgloseIngresosTotales, ingresosTotalesPrevisibles, 'text-emerald-700');
+  renderAcordeon('det-ingresos-totales', desgloseIngresosCobrados, ingresosReales, 'text-emerald-700');
   renderAcordeon('det-ingresos-pendientes', desgloseIngresosPendientes, ingresosTotalesPrevisibles, 'text-emerald-600');
   renderAcordeon('det-gastos-reales', desgloseGastosReales, ingresosTotalesPrevisibles, 'text-rose-700', true);
   renderAcordeon('det-gastos-pendientes', desgloseGastosPendientes, ingresosTotalesPrevisibles, 'text-amber-800', true);
@@ -857,7 +857,7 @@ function cambiarVistaTemporal(valor) {
   vistaActual = valor;
   actualizarTituloPeriodo();
   document.getElementById('lbl-kpi-forecast').innerText = valor === 'MES' ? 'Cierre mes' : 'Cierre año';
-  document.getElementById('txt-vista-actual').innerText = valor === 'MES' ? 'Mes' : 'Año Completo';
+  document.getElementById('txt-vista-actual').innerText = valor === 'MES' ? 'Mes' : 'Año';
   calcularFinanzas();
 }
 
